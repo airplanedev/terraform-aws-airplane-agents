@@ -54,6 +54,18 @@ variable "agent_mem" {
   default     = 512
 }
 
+variable "default_task_cpu" {
+  type        = string
+  description = "Default CPU for tasks, in millicores (e.g. 500m or 1000m)"
+  default     = "1000m"
+}
+
+variable "default_task_memory" {
+  type        = string
+  description = "Default memory for tasks (e.g. 500Mi or 2Gi)"
+  default     = "1Gi"
+}
+
 variable "num_agents" {
   type        = number
   description = "Number of agent instances to run"

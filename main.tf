@@ -168,6 +168,8 @@ resource "aws_ecs_task_definition" "agent_task_def" {
         { name = "AP_API_TOKEN_SECRET_ARN", value = var.api_token_secret_arn },
         { name = "AP_AWS_REGION", value = data.aws_region.current.name },
         { name = "AP_AUTO_UPGRADE", value = "true" },
+        { name = "AP_DEFAULT_CPU", value = var.default_task_cpu },
+        { name = "AP_DEFAULT_MEMORY", value = var.default_task_memory },
         { name = "AP_DRIVER", value = "ecs" },
         { name = "AP_ECS_CLUSTER", value = var.cluster_arn == "" ? aws_ecs_cluster.cluster[0].arn : var.cluster_arn },
         { name = "AP_ECS_EXECUTION_ROLE", value = aws_iam_role.default_run_role.arn },
