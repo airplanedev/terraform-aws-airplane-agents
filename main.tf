@@ -219,7 +219,7 @@ resource "aws_ecs_service" "agent_service" {
   launch_type   = "FARGATE"
   network_configuration {
     assign_public_ip = true
-    security_groups  = length(var.vpc_security_group_ids) > 0 ? var.vpc_security_group_ids : (length(module.agent_security_group) > 0 ? [module.agent_security_group[0].security_group_id] : [])
+    security_groups  = length(var.vpc_security_group_ids) > 0 ? join(",", var.vpc_security_group_ids) : join(",", [for sg in module.agent_security_group : sg.security_group_id])
     subnets          = var.subnet_ids
   }
   task_definition = aws_ecs_task_definition.agent_task_def.arn
