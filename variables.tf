@@ -86,12 +86,12 @@ variable "tags" {
 
 variable "subnet_ids" {
   type        = list(string)
-  description = "List of subnet IDs for ECS service"
+  description = "List of subnet IDs for ECS service. Will create a security group for each one."
   default     = []
 }
 
 variable "vpc_security_group_ids" {
   type        = list(string)
-  description = "List of security group IDs to use. If not set, a new security group is created for the provided subnet IDs."
+  description = "List of security group IDs to use. If not set, a new security group is created for each of the provided subnet IDs."
   default     = []
 }
