@@ -77,9 +77,3 @@ variable "subnet_ids" {
   description = "List of subnet IDs for ECS service"
   default = []
 }
-
-variable "vpc_id" {
-  type = string
-  description = "VPC to deploy to, should match subnet IDs"
-  default = ""
-}

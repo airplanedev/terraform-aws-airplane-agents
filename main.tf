@@ -8,12 +8,16 @@ resource "aws_ecs_cluster" "cluster" {
   count = var.cluster_arn == "" ? 1 : 0
 }
 
+data "aws_subnet" "selected" {
+  id = var.subnet_ids[0]
+}
+
 module "agent_security_group" {
   source = "terraform-aws-modules/security-group/aws"
 
   name        = "airplane-agent"
   description = "Security group for Airplane agent"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_subnet.selected.vpc_id
 
   egress_rules = ["all-all"]
 
