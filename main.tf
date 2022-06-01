@@ -9,15 +9,18 @@ resource "aws_ecs_cluster" "cluster" {
 }
 
 data "aws_subnet" "selected" {
+  count = length(var.subnet_ids) > 0 ? 1 : 0
   id = var.subnet_ids[0]
 }
 
 module "agent_security_group" {
   source = "terraform-aws-modules/security-group/aws"
 
+  count = length(data.aws_subnet.selected) > 0 && length(var.vpc_security_group_ids) == 0 ? 1 : 0
+
   name        = "airplane-agent"
   description = "Security group for Airplane agent"
-  vpc_id      = data.aws_subnet.selected.vpc_id
+  vpc_id      = data.aws_subnet.selected[0].vpc_id
 
   egress_rules = ["all-all"]
 
@@ -179,7 +182,7 @@ resource "aws_ecs_task_definition" "agent_task_def" {
         { name = "AP_ECS_CLUSTER", value = var.cluster_arn == "" ? aws_ecs_cluster.cluster[0].arn : var.cluster_arn },
         { name = "AP_ECS_EXECUTION_ROLE", value = aws_iam_role.default_run_role.arn },
         { name = "AP_ECS_LOG_GROUP", value = aws_cloudwatch_log_group.run_log_group.name },
-        { name = "AP_ECS_SECURITY_GROUPS", value = module.agent_security_group.security_group_id },
+        { name = "AP_ECS_SECURITY_GROUPS", value = length(var.vpc_security_group_ids) > 0 ? join(",", var.vpc_security_group_ids) : (length(module.agent_security_group) > 0 ? module.agent_security_group[0].security_group_id : "") },
         { name = "AP_ECS_SUBNETS", value = join(",", var.subnet_ids) },
         { name = "AP_LABELS", value = join(",", [for key, value in var.agent_labels : "${key}:${value}"]) },
         { name = "AP_PARALLELISM", value = "50" },
@@ -216,7 +219,7 @@ resource "aws_ecs_service" "agent_service" {
   launch_type   = "FARGATE"
   network_configuration {
     assign_public_ip = true
-    security_groups  = [module.agent_security_group.security_group_id]
+    security_groups  = length(var.vpc_security_group_ids) > 0 ? var.vpc_security_group_ids : (length(module.agent_security_group) > 0 ? [module.agent_security_group[0].security_group_id] : [])
     subnets          = var.subnet_ids
   }
   task_definition = aws_ecs_task_definition.agent_task_def.arn
