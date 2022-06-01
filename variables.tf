@@ -86,7 +86,7 @@ variable "tags" {
 
 variable "subnet_ids" {
   type        = list(string)
-  description = "List of subnet IDs for ECS service. Will create a security group for each one."
+  description = "List of subnet IDs for ECS service."
   default     = []
 }
 
