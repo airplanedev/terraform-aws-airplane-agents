@@ -16,15 +16,20 @@ data "aws_subnet" "selected" {
 module "agent_security_group" {
   source = "terraform-aws-modules/security-group/aws"
 
-  count = length(var.vpc_security_group_ids) > 0 ? 0 : length(data.aws_subnet.selected)
+  count = length(var.vpc_security_group_ids) > 0 ? 0 : 1
 
   name        = "airplane-agent"
   description = "Security group for Airplane agent"
-  vpc_id      = data.aws_subnet.selected[count.index].vpc_id
+  vpc_id      = data.aws_subnet.selected[0].vpc_id
 
   egress_rules = ["all-all"]
 
   tags = var.tags
+}
+
+output "agent_security_group_ids" {
+  value = [for sg in module.agent_security_group : sg.security_group_id]
+  description = "IDs of created security groups, if any"
 }
 
 resource "aws_iam_policy" "default_run_policy" {
@@ -219,7 +224,7 @@ resource "aws_ecs_service" "agent_service" {
   launch_type   = "FARGATE"
   network_configuration {
     assign_public_ip = true
-    security_groups  = length(var.vpc_security_group_ids) > 0 ? join(",", var.vpc_security_group_ids) : join(",", [for sg in module.agent_security_group : sg.security_group_id])
+    security_groups  = length(var.vpc_security_group_ids) > 0 ? toset(var.vpc_security_group_ids) : toset([for sg in module.agent_security_group : sg.security_group_id])
     subnets          = var.subnet_ids
   }
   task_definition = aws_ecs_task_definition.agent_task_def.arn
