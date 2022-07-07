@@ -195,7 +195,7 @@ resource "aws_ecs_task_definition" "agent_task_def" {
         { name = "AP_ENV_SLUG", value = var.env_slug },
         { name = "AP_LABELS", value = join(",", [for key, value in var.agent_labels : "${key}:${value}"]) },
         { name = "AP_TEAM_ID", value = var.team_id },
-        { name = "AP_LOCK_KEY", value = "fargate-" + var.team_id },
+        { name = "AP_LOCK_KEY", value = "fargate-${var.team_id}" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
