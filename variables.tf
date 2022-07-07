@@ -95,3 +95,9 @@ variable "vpc_security_group_ids" {
   description = "List of security group IDs to use. If not set, a new security group is created for the VPC containing the provided subnets."
   default     = []
 }
+
+variable "env_slug" {
+  type = string
+  description = "Slug for environment. Leave blank to let agent execute on all environments."
+  default = ""
+}

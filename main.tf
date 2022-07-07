@@ -94,11 +94,13 @@ resource "aws_iam_role" "agent_role" {
             "ecs:DescribeTasks",
             "ecs:RegisterTaskDefinition",
             "ecs:DeregisterTaskDefinition",
+            "ecs:ListTasks",
+            "ecs:ListTaskDefinitions",
             "ecs:RunTask",
-            "ecs:StopTask",
             "ecs:TagResource",
             "iam:PassRole",
             "logs:GetLogEvents",
+            "secretsmanager:ListSecrets",
           ],
           Resource = "*"
           Effect   = "Allow"
@@ -109,6 +111,7 @@ resource "aws_iam_role" "agent_role" {
             "secretsmanager:DeleteSecret",
             "secretsmanager:DescribeSecret",
             "secretsmanager:GetSecretValue",
+            "secretsmanager:PutSecretValue",
             "secretsmanager:TagResource",
           ]
           Resource = join(":", ["arn:aws:secretsmanager", data.aws_region.current.name, data.aws_caller_identity.current.account_id, "secret:airplane/*"])
@@ -173,32 +176,33 @@ resource "aws_ecs_task_definition" "agent_task_def" {
   container_definitions = jsonencode([
     {
       name  = "airplane-agent"
-      image = "us-docker.pkg.dev/airplane-prod/public/agent:1"
+      image = "us-docker.pkg.dev/airplane-prod/public/agentv2:1"
       environment = [
         { name = "AP_API_HOST", value = var.api_host },
         { name = "AP_API_TOKEN", value = var.api_token },
         { name = "AP_API_TOKEN_SECRET_ARN", value = var.api_token_secret_arn },
-        { name = "AP_AWS_REGION", value = data.aws_region.current.name },
         { name = "AP_AUTO_UPGRADE", value = "true" },
-        { name = "AP_AGENT_IMAGE", value = "us-docker.pkg.dev/airplane-prod/public/agent:1" },
+        { name = "AP_AGENT_IMAGE", value = "us-docker.pkg.dev/airplane-prod/public/agentv2:1" },
         { name = "AP_DEFAULT_CPU", value = var.default_task_cpu },
         { name = "AP_DEFAULT_MEMORY", value = var.default_task_memory },
         { name = "AP_DRIVER", value = "ecs" },
         { name = "AP_ECS_CLUSTER", value = var.cluster_arn == "" ? aws_ecs_cluster.cluster[0].arn : var.cluster_arn },
         { name = "AP_ECS_EXECUTION_ROLE", value = aws_iam_role.default_run_role.arn },
         { name = "AP_ECS_LOG_GROUP", value = aws_cloudwatch_log_group.run_log_group.name },
+        { name = "AP_ECS_REGION", value = data.aws_region.current.name },
         { name = "AP_ECS_SECURITY_GROUPS", value = length(var.vpc_security_group_ids) > 0 ? join(",", var.vpc_security_group_ids) : join(",", [for sg in module.agent_security_group : sg.security_group_id]) },
         { name = "AP_ECS_SUBNETS", value = join(",", var.subnet_ids) },
+        { name = "AP_ENV_SLUG", value = var.env_slug },
         { name = "AP_LABELS", value = join(",", [for key, value in var.agent_labels : "${key}:${value}"]) },
-        { name = "AP_PARALLELISM", value = "50" },
         { name = "AP_TEAM_ID", value = var.team_id },
+        { name = "AP_LOCK_KEY", value = "fargate-" + var.team_id },
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-region"        = data.aws_region.current.name
           "awslogs-group"         = aws_cloudwatch_log_group.agent_log_group.name
-          "awslogs-stream-prefix" = "agent"
+          "awslogs-stream-prefix" = "agentv2"
         }
       }
     }
